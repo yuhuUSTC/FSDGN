@@ -1,0 +1,104 @@
+name: DWT
+model_type: DehazeModel
+scale: 1
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 10
+
+# dataset and data loader settings
+datasets:
+  train:
+    name: VDH
+    type: PairedImageDataset
+    dataroot_gt: D:\VD\Data\Dense_Haze\GT    #D:\VD\Data\ITS\clear  #/gdata/yuhu/VDH/Dense_Haze/GT
+    dataroot_lq: D:\VD\Data\Dense_Haze\hazy  #/gdata/yuhu/VDH/Dense_Haze/hazy
+    filename_tmpl: '{}'
+    flag: False
+    io_backend:
+      type: disk
+
+    gt_sizeH: 256
+    gt_sizeW: 256
+    use_flip: true
+    use_rot: true
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 2
+    batch_size_per_gpu: 2
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+  val:
+    name: indoor
+    type: PairedImageDataset
+    dataroot_gt: D:\VD\Data\Dense_Haze\GT
+    dataroot_lq: D:\VD\Data\Dense_Haze\hazy
+    gt_sizeH: 1152
+    gt_sizeW: 1600
+    flag: true
+    io_backend:
+      type: disk
+
+# network structures
+network_g:
+  type: fusion_net
+#D:\Fractional Fourier\Code\FRFT\experiments\AODNet\models\net_g_latest.pth
+path:
+  pretrain_network_g: ~ #D:\Fractional Fourier\Code\FRFT\experiments\AODNet\models\net_g_latest.pth #D:\Fractional Fourier\Code\FRFT\experiments\MultiAODNet\models\net_g_latest.pth
+  strict_load_g: true
+  resume_state: ~
+
+# training settings
+train:
+  ema_decay: 0.999
+  optim_g:
+    type: Adam
+    lr: !!float 1e-4
+    weight_decay: 0
+    betas: [0.9, 0.99]
+
+  #scheduler:
+  #  type: MultiStepLR
+  #  milestones: [40000, 80000, 120000, 160000]
+  #  gamma: 0.5
+  scheduler:
+    type: CosineAnnealingRestartLR
+    periods: [40000, 40000, 40000, 40000, 40000]
+    restart_weights: [1, 1, 1, 1, 0.5]
+    eta_min: !!float 1e-7
+
+  total_iter: 200000
+  warmup_iter: -1  # no warm up
+
+  # losses
+  pixel_opt:
+    type: CharbonnierLoss
+
+# validation settings
+val:
+  val_freq: !!float 5e0
+  save_img: false
+
+  metrics:
+    ssim: # metric name, can be arbitrary
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+    psnr: # metric name, can be arbitrary
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+
+# logging settings
+logger:
+  print_freq: 500
+  save_checkpoint_freq: !!float 4e4
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29500

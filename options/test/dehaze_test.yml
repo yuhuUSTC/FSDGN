@@ -1,0 +1,55 @@
+name: Ours1
+model_type: DehazeModel
+scale: 1
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 10
+
+datasets:
+  val:
+    name: REVIDE
+    type: PairedImageDataset
+    dataroot_gt: D:\VD\Data\RTTS\JPEGImages #D:\VD\Data\Dense_Haze\GT       D:\VD\Data\NH-HAZE\gt    D:\VD\Data\SOTS\indoor\gt1
+    dataroot_lq: D:\VD\Data\RTTS\JPEGImages #D:\VD\Data\Dense_Haze\hazy    D:\VD\Data\NH-HAZE\hazy    D:\VD\Data\SOTS\indoor\hazy
+    io_backend:
+      type: disk
+    gt_sizeH: 448
+    gt_sizeW: 608
+    
+# network structures
+network_g:
+  type: MPRfusionv5
+
+# D:\VD\BasicSR\main.pth
+# D:\VD\BasicSR\main_NH.pth
+# D:\VD\BasicSR\Ablation_noglobalguidance.pth
+# D:\VD\BasicSR\Ablation_nofrequency.pth
+# D:\VD\BasicSR\Ablation_noglobalguidance_frq.pth
+# D:\VD\BasicSR\Ablation_global_global.pth
+
+# D:\VD\BasicSR\Ablation_global_global_noglobalguidance.pth
+# D:\VD\BasicSR\Ablation_noglobalguidance_stagefusion.pth
+# D:\VD\BasicSR\Ablation_noglobalguidance_stagefusion_40000.pth
+# D:\VD\BasicSR\Ablation_noglobalguidance_stagefusion_20000.pth
+
+# D:\VD\BasicSR\AECRNet_NH.pth
+
+path:
+  pretrain_network_g: D:\VD\BasicSR\main.pth
+  strict_load_g: true
+  resume_state: ~
+
+
+# validation settings
+val:
+  save_img: true
+  suffix: ~  # add suffix to saved images, if None, use exp name
+
+  metrics:
+    ssim: # metric name, can be arbitrary
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+    psnr: # metric name, can be arbitrary
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
