@@ -70,6 +70,10 @@ train:
   # losses
   pixel_opt:
     type: CharbonnierLoss
+  Phase_opt:
+    type: PhaseLoss
+  Amplitude_opt:
+    type: AmplitudeLoss
 
 # validation settings
 val:
