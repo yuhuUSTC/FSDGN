@@ -9,8 +9,6 @@ from basicsr.metrics import calculate_metric
 from basicsr.utils import get_root_logger, imwrite, tensor2img
 from basicsr.utils.registry import MODEL_REGISTRY
 from .base_model import BaseModel
-from basicsr.losses.focal_frequency_loss import FocalFrequencyLoss as FFL
-import cv2
 from basicsr.utils import imwrite, tensor2img
 from torchvision import utils
 import torch.nn.functional as F
@@ -63,13 +61,15 @@ class DehazeModel(BaseModel):
         else:
             self.cri_pix = None
 
-        if train_opt.get('perceptual_opt'):
-            self.cri_perceptual = build_loss(train_opt['perceptual_opt']).to(self.device)
+        if train_opt.get('Phase_opt'):
+            self.cri_phase = build_loss(train_opt['Phase_opt']).to(self.device)
         else:
-            self.cri_perceptual = None
+            self.cri_phase = None
 
-        if self.cri_pix is None and self.cri_perceptual is None:
-            raise ValueError('Both pixel and perceptual losses are None.')
+        if train_opt.get('Amplitude_opt'):
+            self.cri_amp = build_loss(train_opt['Amplitude_opt']).to(self.device)
+        else:
+            self.cri_amp = None
 
         self.ffl = FFL(loss_weight=1.0, alpha=1.0)
 
@@ -99,21 +99,26 @@ class DehazeModel(BaseModel):
 
     def optimize_parameters(self, current_iter):
         self.optimizer_g.zero_grad()
-        self.output = self.net_g(self.lq)
+        self.output, self.output1 = self.net_g(self.lq)
 
         l_total = 0
         loss_dict = OrderedDict()
         # pixel loss
         if self.cri_pix:
             l_pix = self.cri_pix(self.output, self.gt)
+            l_pix += self.cri_pix(self.output1, self.gt)
             l_total += l_pix
             loss_dict['l_pix'] = l_pix
-        # perceptual loss
-        if self.cri_perceptual:
-            l_perceptual = self.cri_perceptual(self.output, self.gt)
-            l_perceptual = l_perceptual + self.cri_perceptual(self.output1, self.gt)
-            l_total += l_perceptual * 0.02
-            loss_dict['l_perceptual'] = l_perceptual * 0.02
+        if self.cri_phase:
+            phase_pix = self.cri_phase(self.output, self.gt)
+            phase_pix += self.cri_phase(self.output1, self.gt)
+            l_total += phase_pix
+            loss_dict['l_phase'] = phase_pix
+        if self.cri_amp:
+            amp_pix = self.cri_amp(self.output, self.gt)
+            amp_pix += self.cri_amp(self.output1, self.gt)
+            l_total += amp_pix
+            loss_dict['l_amp'] = amp_pix
 
         l_total.backward()
         self.optimizer_g.step()
@@ -126,8 +131,7 @@ class DehazeModel(BaseModel):
     def test(self):
         self.net_g.eval()
         with torch.no_grad():
-            #self.output, self.output1 = self.net_g(self.lq)
-            self.output = self.net_g(self.lq)
+            self.output, self.output1 = self.net_g(self.lq)
         self.net_g.train()
 
     def dist_validation(self, dataloader, current_iter, tb_logger, save_img):
@@ -163,11 +167,8 @@ class DehazeModel(BaseModel):
 
             if save_img:
                 save_img_path = osp.join(self.opt['path']['visualization'], img_name, f'{img_name}_{current_iter}_dehaze.png')
-                #size = (620, 460)
-                #sr_img = cv2.resize(sr_img, size, interpolation=cv2.INTER_AREA)
                 imwrite(sr_img, save_img_path)
-                #imwrite(lq_img, save_lq_img_path)
-                #imwrite(gt_img, save_gt_img_path)
+
 
             if with_metrics:
                 # calculate metrics
