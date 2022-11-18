@@ -31,6 +31,31 @@ def charbonnier_loss(pred, target, eps=1e-12):
     return torch.sqrt((pred - target)**2 + eps)
 
 
+
+@LOSS_REGISTRY.register()
+class AmplitudeLoss(nn.Module):
+    def __init__(self):
+        super(AmplitudeLoss, self).__init__()
+    def forward(self, img, img1):
+        fre = torch.fft.rfft2(img, norm='backward')
+        amp = torch.abs(fre)
+        fre1 = torch.fft.rfft2(img1, norm='backward')
+        amp1 = torch.abs(fre1)
+        return l1_loss(amp, amp1, reduction='mean')
+
+
+@LOSS_REGISTRY.register()
+class PhaseLoss(nn.Module):
+    def __init__(self):
+        super(PhaseLoss, self).__init__()
+    def forward(self, img, img1):
+        fre = torch.fft.rfft2(img, norm='backward')
+        pha = torch.angle(fre)
+        fre1 = torch.fft.rfft2(img1, norm='backward')
+        pha1 = torch.angle(fre1)
+        return l1_loss(pha, pha1, reduction='mean')
+
+
 ######################################################### class Lab loss
 # Color conversion code
 def rgb2xyz(rgb): # rgb from [0,1]
