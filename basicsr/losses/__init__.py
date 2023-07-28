@@ -6,7 +6,7 @@ from .losses import (AmplitudeLoss, PhaseLoss, CharbonnierLoss, GANLoss, L1Loss,
                      gradient_penalty_loss, r1_penalty, ContrastLoss, PreLoss, ColorLoss, LabLoss, GradientLoss, EdgeLoss, SSIMLoss)
 
 __all__ = [
-    'AmplitudeLoss', 'PhaseLoss', 'L1Loss', 'MSELoss', 'CharbonnierLoss', 'WeightedTVLoss', 'PerceptualLoss', 'GANLoss', 'gradient_penalty_loss',
+    'AmplitudeLoss', 'PhaseLoss', 'L1Loss', 'MSELoss', 'CharbonnierLoss', 'WeightedTVLoss', 'GANLoss', 'gradient_penalty_loss',
     'r1_penalty', 'g_path_regularize', 'ContrastLoss', 'PreLoss', 'ColorLoss', 'LabLoss', 'GradientLoss', 'EdgeLoss', 'SSIMLoss'
 ]
 
